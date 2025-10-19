@@ -20,7 +20,7 @@ async def create_diagnostic_controller(diagnostic: DiagnosticRequest) -> Diagnos
     """
     Crea un diagnóstico empresarial: guarda en MongoDB y genera el resultado con OpenAI
     """
-    # Guardar datos iniciales - CORREGIDO para campos empresariales
+    # Guardar datos iniciales
     new_diag = {
         "nombre": diagnostic.nombre,
         "whatsapp": diagnostic.whatsapp,
@@ -114,7 +114,7 @@ async def create_diagnostic_controller(diagnostic: DiagnosticRequest) -> Diagnos
 
     result = await collection_diagnostics.insert_one(new_diag)
 
-    # Construir mensaje para OpenAI - CORREGIDO para datos empresariales
+    # Construir mensaje para OpenAI adaptado para Sí/No
     user_message = f"""
     DIAGNÓSTICO EMPRESARIAL - CLIENTE: {diagnostic.nombre}
     Contacto: {diagnostic.whatsapp} | {diagnostic.correo}
@@ -211,11 +211,11 @@ async def create_diagnostic_controller(diagnostic: DiagnosticRequest) -> Diagnos
 
     📝 NOTAS ADICIONALES: {diagnostic.notas or "Ninguna"}
 
-    **IMPORTANTE:** Analiza estas respuestas y genera un diagnóstico empresarial completo en formato JSON según la estructura especificada.
+    **IMPORTANTE:** Todas las respuestas son "Sí" o "No". Analiza estas respuestas y genera un diagnóstico empresarial completo en formato JSON según la estructura especificada.
     """
 
     try:
-        # Enviar a OpenAI - CORREGIDO para usar prompt empresarial
+        # Enviar a OpenAI
         response = await client.chat.completions.create(
             model="gpt-4o-mini",
             messages=[
@@ -256,51 +256,115 @@ async def create_diagnostic_controller(diagnostic: DiagnosticRequest) -> Diagnos
 
 def generar_business_json_fallback(diagnostic: DiagnosticRequest) -> str:
     """
-    Genera un JSON de fallback para diagnóstico empresarial
+    Genera un JSON de fallback para diagnóstico empresarial con respuestas Sí/No
     """
-    # Análisis básico basado en respuestas
+    # Contar respuestas Sí por área
+    def contar_si(respuestas):
+        return sum(1 for resp in respuestas if resp.lower() == "sí")
+
+    # Visión
+    vision_respuestas = [diagnostic.vision_p1, diagnostic.vision_p2, diagnostic.vision_p3, 
+                        diagnostic.vision_p4, diagnostic.vision_p5, diagnostic.vision_p6,
+                        diagnostic.vision_p7, diagnostic.vision_p8, diagnostic.vision_p9, diagnostic.vision_p10]
+    si_vision = contar_si(vision_respuestas)
+    
+    # Finanzas
+    finanzas_respuestas = [diagnostic.finanzas_p1, diagnostic.finanzas_p2, diagnostic.finanzas_p3,
+                          diagnostic.finanzas_p4, diagnostic.finanzas_p5, diagnostic.finanzas_p6,
+                          diagnostic.finanzas_p7, diagnostic.finanzas_p8, diagnostic.finanzas_p9,
+                          diagnostic.finanzas_p10, diagnostic.finanzas_p11, diagnostic.finanzas_p12]
+    si_finanzas = contar_si(finanzas_respuestas)
+    
+    # Operaciones
+    operaciones_respuestas = [diagnostic.operaciones_p1, diagnostic.operaciones_p2, diagnostic.operaciones_p3,
+                             diagnostic.operaciones_p4, diagnostic.operaciones_p5, diagnostic.operaciones_p6,
+                             diagnostic.operaciones_p7, diagnostic.operaciones_p8, diagnostic.operaciones_p9,
+                             diagnostic.operaciones_p10, diagnostic.operaciones_p11, diagnostic.operaciones_p12]
+    si_operaciones = contar_si(operaciones_respuestas)
+    
+    # Marketing
+    marketing_respuestas = [diagnostic.marketing_p1, diagnostic.marketing_p2, diagnostic.marketing_p3,
+                           diagnostic.marketing_p4, diagnostic.marketing_p5, diagnostic.marketing_p6,
+                           diagnostic.marketing_p7, diagnostic.marketing_p8, diagnostic.marketing_p9,
+                           diagnostic.marketing_p10, diagnostic.marketing_p11, diagnostic.marketing_p12]
+    si_marketing = contar_si(marketing_respuestas)
+    
+    # Talento
+    talento_respuestas = [diagnostic.talento_p1, diagnostic.talento_p2, diagnostic.talento_p3,
+                         diagnostic.talento_p4, diagnostic.talento_p5, diagnostic.talento_p6,
+                         diagnostic.talento_p7, diagnostic.talento_p8, diagnostic.talento_p9,
+                         diagnostic.talento_p10, diagnostic.talento_p11]
+    si_talento = contar_si(talento_respuestas)
+    
+    # Indicadores
+    indicadores_respuestas = [diagnostic.indicadores_p1, diagnostic.indicadores_p2, diagnostic.indicadores_p3,
+                             diagnostic.indicadores_p4, diagnostic.indicadores_p5, diagnostic.indicadores_p6,
+                             diagnostic.indicadores_p7, diagnostic.indicadores_p8, diagnostic.indicadores_p9]
+    si_indicadores = contar_si(indicadores_respuestas)
+    
+    # Mentalidad
+    mentalidad_respuestas = [diagnostic.mentalidad_p1, diagnostic.mentalidad_p2, diagnostic.mentalidad_p3,
+                            diagnostic.mentalidad_p4, diagnostic.mentalidad_p5, diagnostic.mentalidad_p6,
+                            diagnostic.mentalidad_p7, diagnostic.mentalidad_p8, diagnostic.mentalidad_p9, diagnostic.mentalidad_p10]
+    si_mentalidad = contar_si(mentalidad_respuestas)
+
+    # Determinar áreas fuertes y de mejora
     areas_fuertes = []
     areas_mejora = []
     
-    # Evaluar visión
-    vision_responses = [diagnostic.vision_p1, diagnostic.vision_p2, diagnostic.vision_p3, 
-                       diagnostic.vision_p4, diagnostic.vision_p5, diagnostic.vision_p6,
-                       diagnostic.vision_p7, diagnostic.vision_p8, diagnostic.vision_p9, diagnostic.vision_p10]
-    
-    siempre_count = sum(1 for resp in vision_responses if resp.lower() == "siempre")
-    if siempre_count >= 6:
+    if si_vision >= 7:
         areas_fuertes.append("Visión y propósito")
-    elif siempre_count <= 3:
+    elif si_vision <= 3:
         areas_mejora.append("Visión y propósito")
-    
-    # Evaluar finanzas
-    finanzas_responses = [diagnostic.finanzas_p1, diagnostic.finanzas_p2, diagnostic.finanzas_p3,
-                         diagnostic.finanzas_p4, diagnostic.finanzas_p5, diagnostic.finanzas_p6,
-                         diagnostic.finanzas_p7, diagnostic.finanzas_p8, diagnostic.finanzas_p9,
-                         diagnostic.finanzas_p10, diagnostic.finanzas_p11, diagnostic.finanzas_p12]
-    
-    nunca_count = sum(1 for resp in finanzas_responses if resp.lower() == "nunca")
-    if nunca_count >= 6:
-        areas_mejora.append("Estructura financiera (necesita atención urgente)")
-    elif nunca_count <= 2:
+        
+    if si_finanzas >= 8:
         areas_fuertes.append("Estructura financiera")
+    elif si_finanzas <= 4:
+        areas_mejora.append("Estructura financiera")
+        
+    if si_operaciones >= 8:
+        areas_fuertes.append("Operaciones y servicio")
+    elif si_operaciones <= 4:
+        areas_mejora.append("Operaciones y servicio")
+        
+    if si_marketing >= 8:
+        areas_fuertes.append("Marketing y presencia digital")
+    elif si_marketing <= 4:
+        areas_mejora.append("Marketing y presencia digital")
+        
+    if si_talento >= 6:
+        areas_fuertes.append("Talento humano y cultura")
+    elif si_talento <= 3:
+        areas_mejora.append("Talento humano y cultura")
+        
+    if si_indicadores >= 6:
+        areas_fuertes.append("Indicadores y resultados")
+    elif si_indicadores <= 3:
+        areas_mejora.append("Indicadores y resultados")
+        
+    if si_mentalidad >= 7:
+        areas_fuertes.append("Mentalidad empresarial")
+    elif si_mentalidad <= 4:
+        areas_mejora.append("Mentalidad empresarial")
 
     json_resultado = {
-        "resumen_ejecutivo": f"Diagnóstico empresarial para {diagnostic.nombre}. El negocio muestra áreas de fortaleza y oportunidades de mejora.",
+        "resumen_ejecutivo": f"Diagnóstico empresarial para {diagnostic.nombre}. Análisis basado en respuestas Sí/No.",
         "puntuacion_areas": {
-            "vision": {"puntuacion": siempre_count, "estado": "Saludable" if siempre_count >= 6 else "En observación"},
-            "finanzas": {"puntuacion": 12 - nunca_count, "estado": "Crítico" if nunca_count >= 6 else "En desarrollo"},
-            "operaciones": {"puntuacion": 8, "estado": "Por evaluar"},
-            "marketing": {"puntuacion": 7, "estado": "Por evaluar"},
-            "talento": {"puntuacion": 6, "estado": "Por evaluar"}
+            "vision": {"puntuacion": si_vision, "total": 10, "estado": "Alto" if si_vision >= 7 else "Medio" if si_vision >= 4 else "Bajo"},
+            "finanzas": {"puntuacion": si_finanzas, "total": 12, "estado": "Alto" if si_finanzas >= 8 else "Medio" if si_finanzas >= 5 else "Bajo"},
+            "operaciones": {"puntuacion": si_operaciones, "total": 12, "estado": "Alto" if si_operaciones >= 8 else "Medio" if si_operaciones >= 5 else "Bajo"},
+            "marketing": {"puntuacion": si_marketing, "total": 12, "estado": "Alto" if si_marketing >= 8 else "Medio" if si_marketing >= 5 else "Bajo"},
+            "talento": {"puntuacion": si_talento, "total": 11, "estado": "Alto" if si_talento >= 7 else "Medio" if si_talento >= 4 else "Bajo"},
+            "indicadores": {"puntuacion": si_indicadores, "total": 9, "estado": "Alto" if si_indicadores >= 6 else "Medio" if si_indicadores >= 4 else "Bajo"},
+            "mentalidad": {"puntuacion": si_mentalidad, "total": 10, "estado": "Alto" if si_mentalidad >= 7 else "Medio" if si_mentalidad >= 4 else "Bajo"}
         },
-        "areas_fuertes": areas_fuertes if areas_fuertes else ["Mentalidad empresarial (por evaluar)"],
-        "areas_mejora": areas_mejora if areas_mejora else ["Se requiere análisis más detallado"],
+        "areas_fuertes": areas_fuertes if areas_fuertes else ["Revisar todas las áreas"],
+        "areas_mejora": areas_mejora if areas_mejora else ["Evaluación en progreso"],
         "recomendaciones_prioritarias": [
-            "Implementar sistema de control financiero básico",
-            "Definir y comunicar visión clara del negocio",
-            "Establecer métricas clave de desempeño",
-            "Desarrollar protocolos operativos estandarizados"
+            "Implementar sistema de control financiero básico" if si_finanzas <= 6 else "Optimizar estructura financiera",
+            "Definir y comunicar visión clara del negocio" if si_vision <= 5 else "Fortalecer comunicación de visión",
+            "Establecer métricas clave de desempeño" if si_indicadores <= 5 else "Mejorar análisis de indicadores",
+            "Desarrollar protocolos operativos estandarizados" if si_operaciones <= 6 else "Optimizar procesos operativos"
         ],
         "plan_accion_inmediato": [
             {

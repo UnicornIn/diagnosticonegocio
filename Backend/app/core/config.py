@@ -16,7 +16,7 @@ app.add_middleware(
     allow_origins=[
         "http://localhost:3000",         # Desarrollo local
         "http://127.0.0.1:3000", 
-        "http://diagnosticonegocio.rizosfelices.co", # Alternativa local
+        "https://diagnosticonegocio.rizosfelices.co", # Alternativa local
         "https://jacksonville-league-panels-disabilities.trycloudflare.com"
     ],
     allow_credentials=True,

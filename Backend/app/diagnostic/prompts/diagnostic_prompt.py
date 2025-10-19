@@ -156,8 +156,11 @@ Debes generar SOLO un objeto JSON válido con la siguiente estructura:
 }
 
 INSTRUCCIONES FINALES:
-- Calcula las puntuaciones basándote en la frecuencia de "Siempre" (alto puntaje) vs "Nunca" (bajo puntaje)
+- Calcula las puntuaciones basándote en la frecuencia de "Sí" (alto puntaje) vs "No" (bajo puntaje)
+- Las puntuaciones deben calcularse en escala de 0-10 según el porcentaje de respuestas "Sí" en cada área
 - Sé específico y concreto en las recomendaciones
 - Mantén el tono empático pero profesional
 - Todas las recomendaciones deben ser accionables y realistas para una PYME
-- NO incluyas texto fuera del objeto JSON"""
+- NO incluyas texto fuera del objeto JSON
+- Analiza las respuestas "Sí" y "No" para identificar patrones específicos en cada área empresarial
+- Prioriza las áreas con mayor cantidad de respuestas "No" para el plan de mejora inmediato"""
